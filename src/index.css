@@ -1,0 +1,285 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Semantic Core Variables - Dark (Default) */
+  --bg-app: #050505;
+  --bg-surface: rgba(15, 10, 30, 0.6);
+  --bg-sidebar: rgba(10, 5, 20, 0.7);
+  --bg-surface-hover: rgba(40, 20, 70, 0.8);
+  --bg-input: rgba(5, 5, 10, 0.9);
+  
+  --border-subtle: rgba(168, 85, 247, 0.2);
+  --border-focus: rgba(168, 85, 247, 0.6);
+
+  --text-main: #e2e8f0;
+  --text-bright: #ffffff;
+  --text-muted: #94a3b8;
+
+  --accent-primary: #c084fc;
+  --accent-primary-glow: rgba(192, 132, 252, 0.4);
+  
+  --accent-info: #60a5fa;
+  --accent-info-glow: rgba(96, 165, 250, 0.25);
+
+  --accent-success: #4ade80;
+  --accent-success-glow: rgba(74, 222, 128, 0.25);
+
+  --accent-warning: #fbbf24;
+  --accent-warning-glow: rgba(251, 191, 36, 0.25);
+
+  --accent-danger: #f87171;
+  --accent-danger-glow: rgba(248, 113, 113, 0.25);
+
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --trans-fast: 0.15s var(--ease-in-out);
+  --trans-normal: 0.3s var(--ease-in-out);
+
+  font-family: var(--font-sans);
+  color-scheme: dark;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+@theme {
+  --color-bg-app: var(--bg-app);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-surface-hover: var(--bg-surface-hover);
+  --color-bg-input: var(--bg-input);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-focus: var(--border-focus);
+
+  --color-text-main: var(--text-main);
+  --color-text-bright: var(--text-bright);
+  --color-text-muted: var(--text-muted);
+
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-info: var(--accent-info);
+  --color-accent-success: var(--accent-success);
+  --color-accent-warning: var(--accent-warning);
+  --color-accent-danger: var(--accent-danger);
+
+  --shadow-primary-glow: 0 0 15px var(--accent-primary-glow);
+  --shadow-info-glow: 0 0 15px var(--accent-info-glow);
+  --shadow-success-glow: 0 0 6px var(--accent-success);
+  --shadow-warning-glow: 0 0 6px var(--accent-warning);
+  --shadow-danger-glow: 0 0 6px var(--accent-danger);
+}
+
+body.cyber-light {
+  --bg-app: #f8f9fa;
+  --bg-surface: rgba(255, 255, 255, 0.8);
+  --bg-sidebar: rgba(241, 243, 244, 0.9);
+  --bg-surface-hover: rgba(232, 234, 237, 0.9);
+  --bg-input: #ffffff;
+  
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-focus: rgba(168, 85, 247, 0.5);
+
+  --text-main: #3c4043;
+  --text-bright: #202124;
+  --text-muted: #5f6368;
+  
+  --accent-primary-glow: rgba(168, 85, 247, 0.2);
+  --accent-info-glow: rgba(66, 133, 244, 0.2);
+  
+  color-scheme: light;
+}
+
+body.cyber-light .glassmorphism {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* body.cyber-light .message-row.user .message-bubble {
+  background: #f1f3f4;
+} */
+
+body.cyber-light .action-card {
+  background: #ffffff;
+  border-color: var(--border-subtle);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+body.cyber-light .sidebar-session-row:hover {
+  background: #e8eaed;
+}
+
+body.cyber-light .sidebar-session-row.active {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+body.cyber-light .right-sidebar {
+  background: #ffffff;
+  border-left-color: var(--border-subtle);
+}
+
+body.cyber-light .main-header {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--bg-app);
+  overflow-x: hidden;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 9999px;
+  opacity: 0.5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-main);
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 4px var(--accent-primary-glow);
+    opacity: 0.8;
+  }
+
+  50% {
+    box-shadow: 0 0 15px var(--accent-primary);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes holographic-glitch {
+  0% {
+    transform: translate(0);
+    text-shadow: none;
+  }
+
+  2% {
+    transform: translate(-1px, 1px);
+    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+  }
+
+  4% {
+    transform: translate(1px, -1px);
+    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+  }
+
+  6% {
+    transform: translate(0);
+    text-shadow: none;
+  }
+}
+
+@keyframes soft-glow-in {
+  from {
+    filter: brightness(1);
+  }
+
+  to {
+    filter: brightness(1.2) drop-shadow(0 0 8px var(--accent-primary-glow));
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.35s var(--ease-spring) forwards;
+}
+
+.animate-holographic:hover {
+  animation: holographic-glitch 1s infinite linear;
+}
+
+/* Custom UI Utility Styles */
+.glassmorphism {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: background var(--trans-normal), border var(--trans-normal), box-shadow var(--trans-normal);
+}
+
+.micro-interaction-btn {
+  transition: transform var(--trans-fast), filter var(--trans-fast), box-shadow var(--trans-fast);
+}
+
+.micro-interaction-btn:hover {
+  transform: translateY(-1px);
+}
+
+.micro-interaction-btn:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+.glow-active {
+  animation: pulse-glow 2.5s infinite ease-in-out;
+}
+
+/* Code Syntax & Diff Highlights */
+.diff-line-add {
+  background-color: rgba(74, 222, 128, 0.12);
+  color: var(--accent-success);
+  border-left: 3px solid var(--accent-success);
+}
+
+.diff-line-del {
+  background-color: rgba(248, 113, 113, 0.12);
+  color: var(--accent-danger);
+  border-left: 3px solid var(--accent-danger);
+}
+
+.diff-line-normal {
+  color: var(--text-main);
+  border-left: 3px solid transparent;
+}
+
+.diff-line-header {
+  background-color: rgba(96, 165, 250, 0.1);
+  color: var(--accent-info);
+  font-weight: bold;
+}
