@@ -85,13 +85,13 @@ export function ActivityFiles({ artifacts }: { artifacts?: Artifact[] }) {
   const summaryParts = [createdText, updatedText, deletedText].filter(Boolean);
 
   return (
-    <div className="activity-files-summary mt-2 bg-bg-input/40 border border-border-subtle rounded-xl p-3 flex flex-col gap-2 animate-slide-in">
+    <div className="activity-files-summary mt-2 bg-bg-surface border border-border-subtle rounded-xl p-3 flex flex-col gap-2 animate-slide-in">
       <div
         className="flex items-center justify-between cursor-pointer select-none"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex flex-col gap-0.5 flex-1 pr-4 min-w-0">
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+          <div className="text-[10px] font-bold text-text-main uppercase tracking-wider flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-accent-primary rounded-full" />
             Workspace Modifications
           </div>

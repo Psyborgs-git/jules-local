@@ -6,6 +6,7 @@ import { useAppStore } from './store/useAppStore';
 
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
+import { ResizeHandle } from './components/layout/ResizeHandle';
 import { SettingsDashboard } from './components/SettingsDashboard';
 import { DiffVisualizer } from './components/DiffVisualizer';
 import { TerminalWindow } from './components/TerminalWindow';
@@ -28,8 +29,12 @@ export default function App() {
     setCurrentSourceHub,
     showSettings,
     setShowSettings,
+    sidebarCollapsed,
+    setSidebarCollapsed,
     rightSidebarCollapsed,
     setRightSidebarCollapsed,
+    rightSidebarWidth,
+    setRightSidebarWidth,
     activeRightTab,
     setActiveRightTab,
     setStatusMsg,
@@ -60,7 +65,7 @@ export default function App() {
         }
       })
       .catch(err => console.error('Failed to load settings:', err));
-  }, [setAutoPR]);
+  }, [setAutoPR, setCyberTheme]);
 
   useEffect(() => {
     if (sessionIdFromUrl) {
@@ -176,8 +181,24 @@ export default function App() {
       .filter(Boolean) as BashOutput[];
   }, [activities]);
 
+  const handleRightResize = useCallback((delta: number) => {
+    const newWidth = Math.max(300, Math.min(800, rightSidebarWidth - delta));
+    setRightSidebarWidth(newWidth);
+  }, [rightSidebarWidth, setRightSidebarWidth]);
+
   return (
-    <div className={`app-layout font-sans text-slate-300 theme-${cyberTheme}`}>
+    <div className={`app-layout font-sans text-text-main theme-${cyberTheme}`}>
+      {/* Mobile Backdrop */}
+      {(!sidebarCollapsed || !rightSidebarCollapsed) && (
+        <div 
+          className="fixed inset-0 bg-bg-app/60 backdrop-blur-sm z-[90] md:hidden"
+          onClick={() => {
+            setSidebarCollapsed(true);
+            setRightSidebarCollapsed(true);
+          }}
+        />
+      )}
+
       <Sidebar />
 
       <main className="main-window">
@@ -191,28 +212,32 @@ export default function App() {
           </div>
 
           {!rightSidebarCollapsed && (
-            <aside className="right-sidebar bg-slate-900/90 backdrop-blur-xl border-l border-slate-800/50 w-80 flex flex-col absolute right-0 top-0 bottom-0 z-20 shadow-2xl animate-slide-in">
-              <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-                <span className="font-semibold text-white text-sm font-mono">Session Artifacts</span>
-                <button type="button" onClick={() => setRightSidebarCollapsed(true)} className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition bg-transparent border-none cursor-pointer">
+            <aside 
+              className="right-sidebar bg-bg-sidebar border-l border-border-subtle flex flex-col z-20 shadow-2xl animate-slide-in"
+              style={{ width: rightSidebarWidth, minWidth: rightSidebarWidth }}
+            >
+              <ResizeHandle onResize={handleRightResize} direction="left" className="hidden md:block" />
+              <div className="p-3 border-b border-border-subtle flex items-center justify-between">
+                <span className="font-semibold text-text-main text-sm font-mono">Session Artifacts</span>
+                <button type="button" onClick={() => setRightSidebarCollapsed(true)} className="p-1 rounded text-text-muted hover:text-text-bright hover:bg-bg-surface-hover transition bg-transparent border-none cursor-pointer">
                   <X size={14} />
                 </button>
               </div>
 
-              <div className="flex border-b border-slate-800">
-                <button type="button" onClick={() => setActiveRightTab('diffs')} className={`flex-1 py-2 text-xs font-semibold cursor-pointer border-none transition-colors font-mono ${activeRightTab === 'diffs' ? 'bg-slate-800/80 text-purple-400 border-b-2 border-b-purple-500' : 'bg-transparent text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+              <div className="flex border-b border-border-subtle">
+                <button type="button" onClick={() => setActiveRightTab('diffs')} className={`flex-1 py-2 text-xs font-semibold cursor-pointer border-none transition-colors font-mono ${activeRightTab === 'diffs' ? 'bg-bg-surface-hover text-accent-primary border-b-2 border-accent-primary' : 'bg-transparent text-text-muted hover:text-text-main hover:bg-bg-surface-hover/50'}`}>
                   Code Changes
                 </button>
-                <button type="button" onClick={() => setActiveRightTab('terminal')} className={`flex-1 py-2 text-xs font-semibold cursor-pointer border-none transition-colors font-mono ${activeRightTab === 'terminal' ? 'bg-slate-800/80 text-purple-400 border-b-2 border-b-purple-500' : 'bg-transparent text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                <button type="button" onClick={() => setActiveRightTab('terminal')} className={`flex-1 py-2 text-xs font-semibold cursor-pointer border-none transition-colors font-mono ${activeRightTab === 'terminal' ? 'bg-bg-surface-hover text-accent-primary border-b-2 border-accent-primary' : 'bg-transparent text-text-muted hover:text-text-main hover:bg-bg-surface-hover/50'}`}>
                   Terminal Logs
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 bg-slate-950/80">
+              <div className="flex-1 overflow-y-auto p-3 bg-transparent">
                 {activeRightTab === 'diffs' ? (
                   <div className="flex flex-col gap-2">
                     {aggregatedDiffs.length === 0 ? (
-                      <div className="text-center text-slate-500 text-[11px] py-8 font-mono">No code changes in this session</div>
+                      <div className="text-center text-text-muted text-[11px] py-8 font-mono">No code changes in this session</div>
                     ) : (
                       <DiffVisualizer aggregatedFiles={aggregatedDiffs} />
                     )}
@@ -220,7 +245,7 @@ export default function App() {
                 ) : (
                   <div className="flex flex-col gap-4">
                     {aggregatedLogs.length === 0 ? (
-                      <div className="text-center text-slate-500 text-[11px] py-8 font-mono">No terminal logs in this session</div>
+                      <div className="text-center text-text-muted text-[11px] py-8 font-mono">No terminal logs in this session</div>
                     ) : (
                       aggregatedLogs.map((log, idx) => (
                         <TerminalWindow key={idx} command={log.command} output={log.output} />
@@ -235,7 +260,7 @@ export default function App() {
       </main>
 
       {showSettings && (
-        <div className="modal-backdrop z-[100] backdrop-blur-xl bg-slate-950/80">
+        <div className="modal-backdrop z-[100] backdrop-blur-xl bg-bg-app/80">
           <SettingsDashboard
             dbConfig={dbConfig}
             apiKeyInput={apiKeyInput}

@@ -21,8 +21,12 @@ interface AppState {
   // Layout states
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  sidebarWidth: number;
+  setSidebarWidth: (width: number) => void;
   rightSidebarCollapsed: boolean;
   setRightSidebarCollapsed: (collapsed: boolean) => void;
+  rightSidebarWidth: number;
+  setRightSidebarWidth: (width: number) => void;
   activeRightTab: 'diffs' | 'terminal';
   setActiveRightTab: (tab: 'diffs' | 'terminal') => void;
 
@@ -71,9 +75,19 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.setItem('jules_sidebar_collapsed', String(collapsed));
     set({ sidebarCollapsed: collapsed });
   },
+  sidebarWidth: Number(localStorage.getItem('jules_sidebar_width')) || 280,
+  setSidebarWidth: (width) => {
+    localStorage.setItem('jules_sidebar_width', String(width));
+    set({ sidebarWidth: width });
+  },
 
   rightSidebarCollapsed: true,
   setRightSidebarCollapsed: (collapsed) => set({ rightSidebarCollapsed: collapsed }),
+  rightSidebarWidth: Number(localStorage.getItem('jules_right_sidebar_width')) || 440,
+  setRightSidebarWidth: (width) => {
+    localStorage.setItem('jules_right_sidebar_width', String(width));
+    set({ rightSidebarWidth: width });
+  },
   activeRightTab: 'diffs',
   setActiveRightTab: (tab) => set({ activeRightTab: tab }),
 

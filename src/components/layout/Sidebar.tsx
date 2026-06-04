@@ -2,8 +2,9 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Sparkles, ChevronLeft, Plus, Trash2, Settings, Search, Globe } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { julesApi } from '../../julesApi';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { GithubIcon as Github } from '../GithubIcon';
+import { ResizeHandle } from './ResizeHandle';
 
 export const Sidebar = () => {
   const { id: sessionIdFromUrl } = useParams<{ id: string }>();
@@ -12,6 +13,8 @@ export const Sidebar = () => {
   const {
     sidebarCollapsed,
     setSidebarCollapsed,
+    sidebarWidth,
+    setSidebarWidth,
     sessions,
     setSessions,
     allSources,
@@ -24,8 +27,12 @@ export const Sidebar = () => {
   const [showAllSessions, setShowAllSessions] = useState(false);
   const [sourceSearchQuery, setSourceSearchQuery] = useState('');
 
+  const handleResize = useCallback((delta: number) => {
+    const newWidth = Math.max(200, Math.min(600, sidebarWidth + delta));
+    setSidebarWidth(newWidth);
+  }, [sidebarWidth, setSidebarWidth]);
+
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
-    // ...
     e.preventDefault();
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this vibe coding session?')) return;
@@ -58,11 +65,14 @@ export const Sidebar = () => {
   });
 
   return (
-    <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+    <aside 
+      className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+      style={{ width: sidebarCollapsed ? 0 : sidebarWidth, minWidth: sidebarCollapsed ? 0 : sidebarWidth }}
+    >
       <div className="sidebar-header">
         <div className="flex items-center gap-2.5">
           <Sparkles className="text-accent-primary" size={18} />
-          <span className="font-semibold text-text-bright text-base font-mono">Jules Vibe</span>
+          <span className="font-semibold text-text-main text-base font-mono">Jules Vibe</span>
         </div>
         <button onClick={() => setSidebarCollapsed(true)} className="p-1.5 rounded-lg hover:bg-bg-surface-hover text-text-muted hover:text-text-bright transition bg-transparent border-none cursor-pointer" title="Collapse sidebar">
           <ChevronLeft size={16} />
@@ -77,7 +87,7 @@ export const Sidebar = () => {
         </div>
 
         <div className="flex flex-col gap-1 px-2 mt-4 overflow-hidden" style={{ maxHeight: '40%' }}>
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 font-mono">Previous Chats</div>
+          <div className="text-[10px] font-bold text-text-main uppercase tracking-wider mb-2 font-mono">Previous Chats</div>
           <div className="flex-1 overflow-y-auto flex flex-col gap-0.5 custom-scrollbar">
             {sessions.length === 0 ? (
               <div className="text-center text-text-muted text-[11px] italic py-4 opacity-60">No previous chats</div>
@@ -106,7 +116,7 @@ export const Sidebar = () => {
 
         <div className="flex flex-col gap-1 px-2 mt-6 flex-1 overflow-hidden">
           <div className="flex items-center justify-between mb-2 px-1">
-            <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider font-mono">Repositories</div>
+            <div className="text-[10px] font-bold text-text-main uppercase tracking-wider font-mono">Repositories</div>
             <div className="relative flex items-center group">
               <Search size={10} className="absolute left-2 text-text-muted" />
               <input
@@ -154,6 +164,8 @@ export const Sidebar = () => {
         </button>
         <div className="text-[9px] font-mono text-text-muted text-center opacity-60">SQLite DB • Gemini Vibe</div>
       </div>
+
+      {!sidebarCollapsed && <ResizeHandle onResize={handleResize} direction="right" className="hidden md:block" />}
     </aside>
   );
 };

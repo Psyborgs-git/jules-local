@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle, ChevronDown, ChevronRight, Play } from 'lucide-react';
 import type { Activity, PlanStep } from '../julesApi';
+import { MarkdownText } from './MarkdownText';
 
 const StepRow = ({ step }: { step: PlanStep }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +20,7 @@ const StepRow = ({ step }: { step: PlanStep }) => {
       </div>
       {isOpen && (
         <div className="p-2.5 pt-0 text-[11px] text-text-muted leading-relaxed border-t border-border-subtle bg-bg-input/20">
-          {step.description}
+          <MarkdownText text={step.description} />
         </div>
       )}
     </div>
@@ -43,7 +44,7 @@ export function PlanAccordionCard({
   return (
     <div className="mt-3">
       <div
-        className="flex items-center justify-between cursor-pointer select-none bg-bg-input/40 p-3 rounded-xl border border-border-subtle hover:bg-bg-surface-hover transition-all shadow-sm"
+        className="flex items-center justify-between cursor-pointer select-none bg-bg-surface p-3 rounded-xl border border-border-subtle hover:bg-bg-surface-hover transition-all shadow-sm"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2.5">

@@ -19,7 +19,7 @@ export const HomeView = () => {
   return (
     <div className="mt-12 animate-fade-in max-w-5xl mx-auto">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold font-mono text-text-bright mb-4 flex items-center justify-center gap-4">
+        <h1 className="text-4xl font-bold font-mono text-text-main mb-4 flex items-center justify-center gap-4">
           <Sparkles className="text-accent-primary" size={32} />
           Jules AI Coder
         </h1>
@@ -36,7 +36,7 @@ export const HomeView = () => {
           placeholder="Search your repositories..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-bg-input/40 border border-border-subtle rounded-2xl py-4 pl-12 pr-4 text-text-main focus:border-border-focus focus:ring-4 focus:ring-accent-primary/10 outline-none transition-all shadow-2xl backdrop-blur-md"
+          className="w-full bg-bg-input border border-border-subtle rounded-2xl py-4 pl-12 pr-4 text-text-main focus:border-border-focus focus:ring-4 focus:ring-accent-primary/10 outline-none transition-all shadow-lg backdrop-blur-md"
         />
       </div>
 
@@ -50,7 +50,7 @@ export const HomeView = () => {
             return (
               <div
                 key={source.id}
-                className="group relative bg-bg-input/40 border border-border-subtle rounded-2xl p-5 hover:border-border-focus hover:bg-bg-surface-hover transition-all cursor-pointer shadow-lg backdrop-blur-sm"
+                className="group relative bg-bg-surface border border-border-subtle rounded-2xl p-5 hover:border-border-focus hover:bg-bg-surface-hover transition-all cursor-pointer shadow-md hover:shadow-xl backdrop-blur-sm"
                 onClick={() => navigate(`/source/${source.name}`)}
               >
                 <div className="flex items-start justify-between">

@@ -9,20 +9,40 @@ import { ActivityFiles } from '../ActivityFiles';
 import { MessageComposer } from './MessageComposer';
 
 const ProgressGroup = React.memo(({ activities }: { activities: Activity[] }) => {
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
   if (!activities || activities.length === 0) return null;
+
   return (
-    <div className="flex flex-col gap-1 border-l-2 border-accent-success pl-3 py-1 my-2 bg-accent-success/5 rounded-r-lg">
-      {activities.map(act => (
-        <div key={act.id} className="flex items-start gap-2 py-1">
-          <CheckSquare size={14} className="text-accent-success flex-shrink-0 mt-0.5" />
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-semibold text-accent-success font-mono">{act.progressUpdated?.title}</span>
-            {act.progressUpdated?.description && (
-              <span className="text-[11px] text-text-muted">{act.progressUpdated.description}</span>
-            )}
-          </div>
+    <div className="flex flex-col my-4">
+      <div 
+        className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-bg-surface-hover rounded-lg transition-colors w-fit group"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <div className="flex -space-x-1">
+          {activities.slice(0, 3).map((act, idx) => (
+            <CheckSquare key={act.id} size={14} className="text-accent-success bg-bg-app rounded-sm" />
+          ))}
         </div>
-      ))}
+        <span className="text-[10px] font-bold text-text-main uppercase tracking-widest font-mono group-hover:text-accent-success transition-colors">
+          {activities.length} internal steps {isCollapsed ? '[+]' : '[-]'}
+        </span>
+      </div>
+
+      {!isCollapsed && (
+        <div className="flex flex-col gap-1 border-l-2 border-accent-success/30 ml-3 pl-3 py-1 my-1 bg-accent-success/5 rounded-r-lg animate-slide-in">
+          {activities.map(act => (
+            <div key={act.id} className="flex items-start gap-2 py-1">
+              <CheckSquare size={14} className="text-accent-success flex-shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs font-semibold text-accent-success font-mono">{act.progressUpdated?.title}</span>
+                {act.progressUpdated?.description && (
+                  <span className="text-[11px] text-text-muted">{act.progressUpdated.description}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 });
@@ -51,11 +71,11 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
   return (
     <div className={`message-row flex w-full my-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`message-bubble max-w-[85%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-        <div className={`p-4 rounded-2xl shadow-lg backdrop-blur-md border ${isUser
-          ? 'bg-bg-surface text-text-bright rounded-tr-sm border-border-subtle'
+        <div className={`p-4 rounded-2xl border ${isUser
+          ? 'bg-bg-surface text-text-bright rounded-tr-sm border-border-subtle shadow-lg backdrop-blur-md'
           : isSystem
-            ? 'bg-bg-input/60 text-text-main rounded-tl-sm border-border-subtle'
-            : 'bg-bg-input text-text-main rounded-tl-sm border-accent-primary/20'
+            ? 'bg-transparent text-text-main rounded-tl-sm border-transparent'
+            : 'bg-transparent text-text-main rounded-tl-sm border-transparent'
           }`}>
 
           {act.userMessaged && (

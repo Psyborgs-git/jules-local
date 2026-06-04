@@ -49,7 +49,7 @@ export const Header = () => {
         <span className="text-sm font-semibold text-text-main font-mono">
           {sessionIdFromUrl ? (
             <span className="flex items-center gap-2">
-              <span>Workspace</span>
+              <span className="text-text-main">Workspace</span>
               {activeSessionDetails && (
                 <span className={`text-[10px] font-bold border rounded-full px-2 py-0.5 ${getStatusColorClass(activeSessionDetails.state)}`}>
                   {activeSessionDetails.state.replace('_', ' ')}
@@ -57,7 +57,7 @@ export const Header = () => {
               )}
             </span>
           ) : currentSourceHub ? (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 text-text-main">
               <GithubIcon size={14} className="text-accent-primary" />
               <span>
                 {(() => {
@@ -66,7 +66,7 @@ export const Header = () => {
                 })()}
               </span>
             </span>
-          ) : 'New Coding Assignment'}
+          ) : <span className="text-text-main">New Coding Assignment</span>}
         </span>
       </div>
 

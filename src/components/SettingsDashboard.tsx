@@ -62,14 +62,14 @@ export function SettingsDashboard({
     <div className="settings-screen animate-slide-in">
       <div className="settings-container glassmorphism max-w-[620px] w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-6">
-          <div className="flex items-center gap-2 text-text-bright font-semibold text-sm">
+          <div className="flex items-center gap-2 text-text-main font-semibold text-sm">
             <Settings size={16} className="text-accent-primary" />
             <span>Settings & Configuration</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-xs text-text-muted hover:text-text-bright bg-bg-surface border border-border-subtle rounded-lg px-2.5 py-1 cursor-pointer font-medium font-sans"
+            className="text-xs text-text-muted hover:text-text-main bg-bg-surface border border-border-subtle rounded-lg px-2.5 py-1 cursor-pointer font-medium font-sans"
           >
             Close
           </button>
