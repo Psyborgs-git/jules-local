@@ -20,16 +20,77 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('Failed to connect to SQLite database:', err.message);
   } else {
     console.log('Connected to SQLite database at:', dbPath);
-    // Create settings table
-    db.run(
-      `CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT
-      )`,
-      (createErr) => {
-        if (createErr) console.error('Failed to create settings table:', createErr.message);
-      }
-    );
+    
+    db.serialize(() => {
+      // Create settings table
+      db.run(
+        `CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        )`
+      );
+
+      // Create sources table
+      db.run(
+        `CREATE TABLE IF NOT EXISTS sources (
+          id TEXT PRIMARY KEY,
+          data TEXT
+        )`
+      );
+
+      // Create sessions table
+      db.run(
+        `CREATE TABLE IF NOT EXISTS sessions (
+          id TEXT PRIMARY KEY,
+          data TEXT
+        )`
+      );
+
+      // Create activities table
+      db.run(
+        `CREATE TABLE IF NOT EXISTS activities (
+          id TEXT PRIMARY KEY,
+          session_id TEXT,
+          name TEXT,
+          originator TEXT,
+          description TEXT,
+          create_time TEXT
+        )`
+      );
+
+      // Create messages table
+      db.run(
+        `CREATE TABLE IF NOT EXISTS messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          activity_id TEXT,
+          role TEXT,
+          content TEXT,
+          FOREIGN KEY(activity_id) REFERENCES activities(id)
+        )`
+      );
+
+      // Create events table
+      db.run(
+        `CREATE TABLE IF NOT EXISTS events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          activity_id TEXT,
+          event_type TEXT,
+          data TEXT,
+          FOREIGN KEY(activity_id) REFERENCES activities(id)
+        )`
+      );
+
+      // Create artifacts table
+      db.run(
+        `CREATE TABLE IF NOT EXISTS artifacts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          activity_id TEXT,
+          artifact_type TEXT,
+          data TEXT,
+          FOREIGN KEY(activity_id) REFERENCES activities(id)
+        )`
+      );
+    });
   }
 });
 
@@ -62,6 +123,147 @@ const deleteSetting = (key) => {
       if (err) reject(err);
       else resolve(true);
     });
+  });
+};
+
+const saveSource = (source) => {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'INSERT OR REPLACE INTO sources (id, data) VALUES (?, ?)',
+      [source.id, JSON.stringify(source)],
+      (err) => {
+        if (err) reject(err);
+        else resolve(true);
+      }
+    );
+  });
+};
+
+const saveSession = (session) => {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'INSERT OR REPLACE INTO sessions (id, data) VALUES (?, ?)',
+      [session.id, JSON.stringify(session)],
+      (err) => {
+        if (err) reject(err);
+        else resolve(true);
+      }
+    );
+  });
+};
+
+const saveActivity = async (activity, sessionId) => {
+  // Check if activity exists
+  const existing = await new Promise((resolve) => {
+    db.get('SELECT id FROM activities WHERE id = ?', [activity.id], (err, row) => {
+      resolve(row);
+    });
+  });
+
+  if (existing) return false;
+
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.run(
+        'INSERT INTO activities (id, session_id, name, originator, description, create_time) VALUES (?, ?, ?, ?, ?, ?)',
+        [activity.id, sessionId, activity.name, activity.originator, activity.description, activity.createTime],
+        (err) => { if (err) reject(err); }
+      );
+
+      if (activity.userMessaged) {
+        db.run(
+          'INSERT INTO messages (activity_id, role, content) VALUES (?, ?, ?)',
+          [activity.id, 'user', activity.userMessaged.userMessage]
+        );
+      }
+      if (activity.agentMessaged) {
+        db.run(
+          'INSERT INTO messages (activity_id, role, content) VALUES (?, ?, ?)',
+          [activity.id, 'agent', activity.agentMessaged.agentMessage]
+        );
+      }
+      
+      const eventTypes = ['progressUpdated', 'planGenerated', 'planApproved', 'sessionCompleted', 'sessionFailed'];
+      eventTypes.forEach(type => {
+        if (activity[type]) {
+          db.run(
+            'INSERT INTO events (activity_id, event_type, data) VALUES (?, ?, ?)',
+            [activity.id, type, JSON.stringify(activity[type])]
+          );
+        }
+      });
+
+      if (activity.artifacts && activity.artifacts.length > 0) {
+        activity.artifacts.forEach(artifact => {
+          let type = 'unknown';
+          if (artifact.changeSet) type = 'changeSet';
+          else if (artifact.bashOutput) type = 'bashOutput';
+          else if (artifact.media) type = 'media';
+          
+          db.run(
+            'INSERT INTO artifacts (activity_id, artifact_type, data) VALUES (?, ?, ?)',
+            [activity.id, type, JSON.stringify(artifact)]
+          );
+        });
+      }
+      
+      db.run('SELECT 1', [], () => resolve(true)); // Signal completion
+    });
+  });
+};
+
+const getActivitiesForSession = (sessionId) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT a.*, m.role, m.content, e.event_type, e.data as event_data, art.artifact_type, art.data as artifact_data
+       FROM activities a
+       LEFT JOIN messages m ON a.id = m.activity_id
+       LEFT JOIN events e ON a.id = e.activity_id
+       LEFT JOIN artifacts art ON a.id = art.activity_id
+       WHERE a.session_id = ?
+       ORDER BY a.create_time ASC`,
+      [sessionId],
+      (err, rows) => {
+        if (err) return reject(err);
+        
+        const activityMap = new Map();
+        rows.forEach(row => {
+          if (!activityMap.has(row.id)) {
+            activityMap.set(row.id, {
+              id: row.id,
+              name: row.name,
+              originator: row.originator,
+              description: row.description,
+              createTime: row.create_time,
+              artifacts: []
+            });
+          }
+          const act = activityMap.get(row.id);
+          
+          if (row.role === 'user') act.userMessaged = { userMessage: row.content };
+          if (row.role === 'agent') act.agentMessaged = { agentMessage: row.content };
+          
+          if (row.event_type) {
+            try {
+              act[row.event_type] = JSON.parse(row.event_data);
+            } catch (e) { /* ignore */ }
+          }
+          
+          if (row.artifact_data) {
+            try {
+              const artData = JSON.parse(row.artifact_data);
+              // Avoid duplicate artifacts if multiple rows per activity due to joins
+              const artKey = JSON.stringify(artData);
+              if (!act.artifacts.some(existingArt => JSON.stringify(existingArt) === artKey)) {
+                act.artifacts.push(artData);
+              }
+            } catch (e) { /* ignore */ }
+          }
+        });
+        
+        resolve(Array.from(activityMap.values()));
+      }
+    );
   });
 };
 
@@ -130,8 +332,6 @@ const broadcast = (sessionId, type, data) => {
 };
 
 // Polling Engine
-const sentActivityIds = new Map(); // sessionId -> Set of activity IDs
-
 const pollJules = async () => {
   try {
     const apiKey = await getSetting('jules_api_key');
@@ -139,7 +339,11 @@ const pollJules = async () => {
 
     // 1. Poll sessions list for anyone on the dashboard
     const sessionsRes = await julesRequest('/sessions');
-    broadcast(null, 'sessions', sessionsRes.sessions || []);
+    const allSessions = sessionsRes.sessions || [];
+    for (const session of allSessions) {
+      await saveSession(session);
+    }
+    broadcast(null, 'sessions', allSessions);
 
     // 2. Poll active sessions for connected clients
     const activeSessionIds = [...new Set(clients.map(c => c.sessionId).filter(Boolean))];
@@ -150,16 +354,18 @@ const pollJules = async () => {
           julesRequest(`/sessions/${sessionId}/activities`)
         ]);
         
+        await saveSession(session);
         const allActivities = activitiesRes.activities || [];
-        if (!sentActivityIds.has(sessionId)) {
-          sentActivityIds.set(sessionId, new Set());
-        }
-        const sentSet = sentActivityIds.get(sessionId);
         
-        const newActivities = allActivities.filter(act => !sentSet.has(act.id));
+        const newActivities = [];
+        for (const act of allActivities) {
+          const saved = await saveActivity(act, sessionId);
+          if (saved) {
+            newActivities.push(act);
+          }
+        }
         
         if (newActivities.length > 0) {
-          newActivities.forEach(act => sentSet.add(act.id));
           broadcast(sessionId, 'sessionUpdate', { session, activities: newActivities });
         } else {
           broadcast(sessionId, 'sessionUpdate', { session, activities: [] });
@@ -335,6 +541,11 @@ app.get('/api/sources', async (req, res) => {
     if (filter) path += `&filter=${encodeURIComponent(filter)}`;
     
     const data = await julesRequest(path);
+    if (data.sources) {
+      for (const source of data.sources) {
+        await saveSource(source);
+      }
+    }
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -344,6 +555,7 @@ app.get('/api/sources', async (req, res) => {
 app.get('/api/sources/:id', async (req, res) => {
   try {
     const data = await julesRequest(`/sources/${req.params.id}`);
+    await saveSource(data);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -353,6 +565,11 @@ app.get('/api/sources/:id', async (req, res) => {
 app.get('/api/sessions', async (req, res) => {
   try {
     const data = await julesRequest('/sessions');
+    if (data.sessions) {
+      for (const session of data.sessions) {
+        await saveSession(session);
+      }
+    }
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -362,6 +579,7 @@ app.get('/api/sessions', async (req, res) => {
 app.post('/api/sessions', async (req, res) => {
   try {
     const data = await julesRequest('/sessions', 'POST', req.body);
+    await saveSession(data);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -371,6 +589,7 @@ app.post('/api/sessions', async (req, res) => {
 app.get('/api/sessions/:id', async (req, res) => {
   try {
     const data = await julesRequest(`/sessions/${req.params.id}`);
+    await saveSession(data);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -379,14 +598,21 @@ app.get('/api/sessions/:id', async (req, res) => {
 
 app.get('/api/sessions/:id/activities', async (req, res) => {
   try {
-    const data = await julesRequest(`/sessions/${req.params.id}/activities`);
-    const activities = data.activities || [];
-    if (!sentActivityIds.has(req.params.id)) {
-      sentActivityIds.set(req.params.id, new Set());
+    const sessionId = req.params.id;
+    // Attempt to sync from Jules first
+    try {
+      const data = await julesRequest(`/sessions/${sessionId}/activities`);
+      const activities = data.activities || [];
+      for (const act of activities) {
+        await saveActivity(act, sessionId);
+      }
+    } catch (e) {
+      console.warn(`Failed to sync activities for ${sessionId} from Jules:`, e.message);
     }
-    const sentSet = sentActivityIds.get(req.params.id);
-    activities.forEach(act => sentSet.add(act.id));
-    res.json(data);
+    
+    // Return canonical list from DB
+    const canonicalActivities = await getActivitiesForSession(sessionId);
+    res.json({ activities: canonicalActivities });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

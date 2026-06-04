@@ -100,7 +100,12 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
 
           {(act.artifacts || []).length > 0 && (
             <div className="mt-3 flex items-center gap-2 flex-wrap border-t border-border-subtle pt-3">
-              {(act.artifacts || []).map((art, aIdx) => {
+              {(act.artifacts || []).filter(art => {
+                // If ActivityFiles is shown, we don't need redundant changeSet buttons
+                const isCreatingArtifact = act.description && act.description.includes('Created artifact');
+                if (isCreatingArtifact && art.changeSet) return false;
+                return true;
+              }).map((art, aIdx) => {
                 const patch = art.changeSet?.gitPatch?.unidiffPatch;
                 const bashOutput = art.bashOutput;
                 if (!patch && !bashOutput) return null;
