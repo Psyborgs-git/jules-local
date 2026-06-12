@@ -243,9 +243,23 @@ export const julesApi = {
     return request<Source>(`/sources/${sourceId}`);
   },
 
-  listSessions: async (): Promise<Session[]> => {
-    const res = await request<{ sessions?: Session[] }>('/sessions');
-    return res.sessions || [];
+  listSessions: async (
+    query?: string,
+    pageToken?: string,
+    pageSize?: number
+  ): Promise<{ sessions: Session[]; nextPageToken?: string }> => {
+    let path = '/sessions';
+    const params: string[] = [];
+    if (pageSize !== undefined && pageSize !== null) params.push(`pageSize=${pageSize}`);
+    if (pageToken) params.push(`pageToken=${encodeURIComponent(pageToken)}`);
+    if (query) params.push(`query=${encodeURIComponent(query)}`);
+    if (params.length > 0) path += `?${params.join('&')}`;
+
+    const res = await request<{ sessions?: Session[]; nextPageToken?: string }>(path);
+    return {
+      sessions: res.sessions || [],
+      nextPageToken: res.nextPageToken
+    };
   },
 
   createSession: async (

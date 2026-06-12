@@ -81,7 +81,7 @@ export default function App() {
   useEffect(() => {
     if (dbConfig?.hasKey) {
       julesApi.listSessions()
-        .then(res => setSessions(res))
+        .then(res => setSessions(res.sessions))
         .catch(console.error);
 
       julesApi.listSources('', '', 100)
@@ -188,14 +188,11 @@ export default function App() {
 
   return (
     <div className={`app-layout font-sans text-text-main theme-${cyberTheme}`}>
-      {/* Mobile Backdrop */}
-      {(!sidebarCollapsed || !rightSidebarCollapsed) && (
+      {/* Mobile Backdrop for Left Sidebar */}
+      {!sidebarCollapsed && (
         <div 
           className="fixed inset-0 bg-bg-app/60 backdrop-blur-sm z-[90] md:hidden"
-          onClick={() => {
-            setSidebarCollapsed(true);
-            setRightSidebarCollapsed(true);
-          }}
+          onClick={() => setSidebarCollapsed(true)}
         />
       )}
 
@@ -212,10 +209,16 @@ export default function App() {
           </div>
 
           {!rightSidebarCollapsed && (
-            <aside 
-              className="right-sidebar bg-bg-sidebar border-l border-border-subtle flex flex-col z-20 shadow-2xl animate-slide-in"
-              style={{ width: rightSidebarWidth, minWidth: rightSidebarWidth }}
-            >
+            <>
+              {/* Backdrop for Right Sidebar Drawer */}
+              <div 
+                className="fixed inset-0 bg-bg-app/50 backdrop-blur-md z-[80]"
+                onClick={() => setRightSidebarCollapsed(true)}
+              />
+              <aside 
+                className="right-sidebar bg-bg-sidebar border-l border-border-subtle flex flex-col z-[85] shadow-2xl animate-slide-in"
+                style={{ width: rightSidebarWidth, minWidth: rightSidebarWidth }}
+              >
               <ResizeHandle onResize={handleRightResize} direction="left" className="hidden md:block" />
               <div className="p-3 border-b border-border-subtle flex items-center justify-between">
                 <span className="font-semibold text-text-main text-sm font-mono">Session Artifacts</span>
@@ -255,6 +258,7 @@ export default function App() {
                 )}
               </div>
             </aside>
+          </>
           )}
         </div>
       </main>

@@ -181,25 +181,44 @@ router.get('/sources/:id', async (req, res) => {
 // Sessions Endpoints
 router.get('/sessions', async (req, res) => {
   try {
+    const query = req.query.query || '';
+    const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : null;
+    const pageToken = req.query.pageToken ? parseInt(req.query.pageToken, 10) : 0;
+
+    // Sync from Jules in background to keep SQLite cache updated
+    (async () => {
+      try {
+        const data = await julesRequest('/sessions');
+        if (data.sessions) {
+          for (const session of data.sessions) await saveSession(session);
+        }
+      } catch (e) { /* ignore */ }
+    })();
+
     const cachedSessions = await getSessions();
-    if (cachedSessions.length > 0) {
-      res.json({ sessions: cachedSessions });
-      (async () => {
-        try {
-          const data = await julesRequest('/sessions');
-          if (data.sessions) {
-            for (const session of data.sessions) await saveSession(session);
-          }
-        } catch (e) { /* ignore */ }
-      })();
-      return;
+    
+    // Sort: newest first
+    cachedSessions.sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+
+    // Filter by query if provided
+    const filtered = query
+      ? cachedSessions.filter(s => s.title && s.title.toLowerCase().includes(query.toLowerCase()))
+      : cachedSessions;
+
+    // Paginate if pageSize is specified
+    let paginated = filtered;
+    let nextPageToken = null;
+    if (pageSize !== null) {
+      paginated = filtered.slice(pageToken, pageToken + pageSize);
+      if (pageToken + pageSize < filtered.length) {
+        nextPageToken = String(pageToken + pageSize);
+      }
     }
 
-    const data = await julesRequest('/sessions');
-    if (data.sessions) {
-      for (const session of data.sessions) await saveSession(session);
-    }
-    res.json(data);
+    res.json({
+      sessions: paginated,
+      nextPageToken
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

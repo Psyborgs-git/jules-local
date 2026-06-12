@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Code2, CheckSquare, FileCode, Terminal as TerminalIcon } from 'lucide-react';
+import { Code2, CheckSquare, FileCode, Terminal as TerminalIcon, Github } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { julesApi, type Activity } from '../../julesApi';
 import { CollapsibleMessage } from './CollapsibleMessage';
@@ -99,54 +99,94 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
           )}
 
           {(act.artifacts || []).length > 0 && (
-            <div className="mt-3 flex items-center gap-2 flex-wrap border-t border-border-subtle pt-3">
-              {(act.artifacts || []).filter(art => {
-                // If ActivityFiles is shown, we don't need redundant changeSet buttons
-                const isCreatingArtifact = act.description && act.description.includes('Created artifact');
-                if (isCreatingArtifact && art.changeSet) return false;
-                return true;
-              }).map((art, aIdx) => {
-                const patch = art.changeSet?.gitPatch?.unidiffPatch;
-                const bashOutput = art.bashOutput;
-                if (!patch && !bashOutput) return null;
+            <div className="mt-4 flex flex-col gap-2 border-t border-border-subtle pt-4 w-full">
+              <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider font-mono mb-1">Execution Logs & Artifacts</div>
+              <div className="flex flex-col gap-2">
+                {(act.artifacts || []).filter(art => {
+                  const isCreatingArtifact = act.description && act.description.includes('Created artifact');
+                  if (isCreatingArtifact && art.changeSet) return false;
+                  return true;
+                }).map((art, aIdx) => {
+                  const patch = art.changeSet?.gitPatch?.unidiffPatch;
+                  const bashOutput = art.bashOutput;
+                  if (!patch && !bashOutput) return null;
 
-                const diffTitle = art.changeSet?.gitPatch.suggestedCommitMessage || art.changeSet?.source;
-                const logTitle = bashOutput?.command;
+                  const diffTitle = art.changeSet?.gitPatch.suggestedCommitMessage || art.changeSet?.source;
+                  const logTitle = bashOutput?.command;
 
-                if (patch && !diffTitle) return null;
-                if (bashOutput && !logTitle) return null;
+                  if (patch && !diffTitle) return null;
+                  if (bashOutput && !logTitle) return null;
 
-                return (
-                  <div key={aIdx} className="flex items-center gap-2">
-                    {patch && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveRightTab('diffs');
-                          setRightSidebarCollapsed(false);
-                        }}
-                        className="flex items-center gap-1.5 py-1.5 px-3 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary font-semibold text-xs border border-accent-primary/20 rounded-xl transition cursor-pointer font-mono shadow-primary-glow"
-                      >
-                        <FileCode size={12} />
-                        <span className="truncate max-w-[120px]">{diffTitle}</span>
-                      </button>
-                    )}
-                    {bashOutput && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveRightTab('terminal');
-                          setRightSidebarCollapsed(false);
-                        }}
-                        className="flex items-center gap-1.5 py-1.5 px-3 bg-bg-surface hover:bg-bg-surface-hover text-text-main font-semibold text-xs border border-border-subtle rounded-xl transition cursor-pointer font-mono"
-                      >
-                        <TerminalIcon size={12} />
-                        <span className="truncate max-w-[120px]">{logTitle}</span>
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                  let additions = 0;
+                  let deletions = 0;
+                  if (patch) {
+                    const lines = patch.split('\n');
+                    lines.forEach(l => {
+                      if (l.startsWith('+') && !l.startsWith('+++')) additions++;
+                      else if (l.startsWith('-') && !l.startsWith('---')) deletions++;
+                    });
+                  }
+
+                  return (
+                    <div key={aIdx} className="flex flex-col sm:flex-row gap-2 items-stretch w-full">
+                      {patch && (
+                        <div 
+                          onClick={() => {
+                            setActiveRightTab('diffs');
+                            setRightSidebarCollapsed(false);
+                          }}
+                          className="flex-1 flex items-center justify-between p-3 bg-accent-primary/5 hover:bg-accent-primary/10 border border-accent-primary/20 hover:border-accent-primary/40 rounded-xl transition-all cursor-pointer group/diff shadow-sm hover:shadow-primary-glow min-w-0"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="p-1.5 bg-accent-primary/10 rounded-lg text-accent-primary flex-shrink-0">
+                              <FileCode size={14} />
+                            </div>
+                            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                              <span className="text-xs font-semibold text-text-bright truncate font-mono block">{diffTitle}</span>
+                              <span className="text-[10px] text-text-muted font-mono block">Patch modification</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            {additions > 0 && (
+                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-accent-success/10 text-accent-success">+{additions}</span>
+                            )}
+                            {deletions > 0 && (
+                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-accent-danger/10 text-accent-danger">-{deletions}</span>
+                            )}
+                            <span className="text-[10px] font-semibold uppercase text-accent-primary group-hover/diff:translate-x-0.5 transition-transform ml-1 font-mono whitespace-nowrap">View Diff ➔</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {bashOutput && (
+                        <div 
+                          onClick={() => {
+                            setActiveRightTab('terminal');
+                            setRightSidebarCollapsed(false);
+                          }}
+                          className="flex-1 flex items-center justify-between p-3 bg-bg-surface hover:bg-bg-surface-hover border border-border-subtle hover:border-border-focus rounded-xl transition-all cursor-pointer group/term shadow-sm min-w-0"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className={`p-1.5 rounded-lg flex-shrink-0 ${bashOutput.exitCode === 0 ? 'bg-accent-success/10 text-accent-success' : 'bg-accent-danger/10 text-accent-danger'}`}>
+                              <TerminalIcon size={14} />
+                            </div>
+                            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                              <span className="text-xs font-semibold text-text-bright truncate font-mono block">{logTitle}</span>
+                              <span className="text-[10px] text-text-muted font-mono block">Terminal execution</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase font-mono ${bashOutput.exitCode === 0 ? 'bg-accent-success/10 text-accent-success animate-pulse' : 'bg-accent-danger/10 text-accent-danger'}`}>
+                              {bashOutput.exitCode === 0 ? 'Success' : `Exit ${bashOutput.exitCode}`}
+                            </span>
+                            <span className="text-[10px] font-semibold uppercase text-text-muted group-hover/term:translate-x-0.5 transition-transform ml-1 font-mono whitespace-nowrap">View Log ➔</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

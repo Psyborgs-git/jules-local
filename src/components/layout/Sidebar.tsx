@@ -24,8 +24,26 @@ export const Sidebar = () => {
     setStatusMsg
   } = useAppStore();
 
-  const [showAllSessions, setShowAllSessions] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const [visibleChatsCount, setVisibleChatsCount] = useState(10);
   const [sourceSearchQuery, setSourceSearchQuery] = useState('');
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setChatSearchQuery(e.target.value);
+    setVisibleChatsCount(10);
+  };
+
+  const handleChatsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight - target.scrollTop - target.clientHeight < 20) {
+      const filteredCount = sessions.filter(s =>
+        s.title ? s.title.toLowerCase().includes(chatSearchQuery.toLowerCase()) : false
+      ).length;
+      if (visibleChatsCount < filteredCount) {
+        setVisibleChatsCount(prev => prev + 10);
+      }
+    }
+  };
 
   const handleResize = useCallback((delta: number) => {
     const newWidth = Math.max(200, Math.min(600, sidebarWidth + delta));
@@ -57,7 +75,11 @@ export const Sidebar = () => {
     }
   };
 
-  const displayedSessions = showAllSessions ? sessions : sessions.slice(0, 5);
+  const filteredSessions = sessions.filter(s =>
+    s.title ? s.title.toLowerCase().includes(chatSearchQuery.toLowerCase()) : false
+  );
+
+  const displayedSessions = filteredSessions.slice(0, visibleChatsCount);
 
   const filteredSources = allSources.filter(s => {
     const name = s.githubRepo ? `${s.githubRepo.owner}/${s.githubRepo.repo}` : s.name;
@@ -86,16 +108,34 @@ export const Sidebar = () => {
           </Link>
         </div>
 
-        <div className="flex flex-col gap-1 px-2 mt-4 overflow-hidden" style={{ maxHeight: '40%' }}>
-          <div className="text-[10px] font-bold text-text-main uppercase tracking-wider mb-2 font-mono">Previous Chats</div>
-          <div className="flex-1 overflow-y-auto flex flex-col gap-0.5 custom-scrollbar">
+        <div className="flex flex-col gap-1 px-2 mt-4 overflow-hidden" style={{ maxHeight: '45%' }}>
+          <div className="flex items-center justify-between mb-2 px-1">
+            <div className="text-[10px] font-bold text-text-main uppercase tracking-wider font-mono">Previous Chats</div>
+            <div className="relative flex items-center group">
+              <Search size={10} className="absolute left-2 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={chatSearchQuery}
+                onChange={handleSearchChange}
+                className="bg-bg-input border border-border-subtle rounded-lg py-1 pl-6 pr-2 text-[10px] text-text-main focus:border-border-focus outline-none transition-all w-24 group-hover:w-32"
+              />
+            </div>
+          </div>
+
+          <div 
+            className="flex-1 overflow-y-auto flex flex-col gap-0.5 custom-scrollbar"
+            onScroll={handleChatsScroll}
+          >
             {sessions.length === 0 ? (
               <div className="text-center text-text-muted text-[11px] italic py-4 opacity-60">No previous chats</div>
+            ) : displayedSessions.length === 0 ? (
+              <div className="text-center text-text-muted text-[11px] italic py-4 opacity-60">No matching chats</div>
             ) : (
               <>
                 {displayedSessions.map((s) => (
                   <Link key={s.id} to={`/session/${s.id}`} onClick={() => setShowSettings(false)} className={`sidebar-session-row ${sessionIdFromUrl === s.id ? 'active' : ''}`}>
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {getStatusDot(s.state)}
                       <span className="capped-text flex-1 text-xs">{s.title}</span>
                     </div>
@@ -104,10 +144,10 @@ export const Sidebar = () => {
                     </button>
                   </Link>
                 ))}
-                {sessions.length > 5 && (
-                  <button type="button" onClick={() => setShowAllSessions(!showAllSessions)} className="text-[10px] text-accent-primary font-bold hover:text-accent-primary/80 bg-transparent border-none cursor-pointer mt-1.5 self-start font-mono uppercase">
-                    {showAllSessions ? '[-] Show Less' : `[+] Show More (+${sessions.length - 5})`}
-                  </button>
+                {visibleChatsCount < filteredSessions.length && (
+                  <div className="text-center text-[10px] text-text-muted font-mono py-1.5 animate-pulse">
+                    Scroll for more...
+                  </div>
                 )}
               </>
             )}
