@@ -42,7 +42,7 @@ export const Header = () => {
     <header className="main-header glassmorphism flex justify-between">
       <div className="flex items-center gap-3">
         {sidebarCollapsed && (
-          <button onClick={() => setSidebarCollapsed(false)} className="p-1.5 rounded-lg hover:bg-bg-surface-hover text-text-muted hover:text-text-bright transition bg-transparent border-none cursor-pointer" title="Expand sidebar">
+          <button aria-label="Expand sidebar" onClick={() => setSidebarCollapsed(false)} className="p-1.5 rounded-lg hover:bg-bg-surface-hover text-text-muted hover:text-text-bright transition bg-transparent border-none cursor-pointer" title="Expand sidebar">
             <Menu size={16} />
           </button>
         )}
@@ -71,11 +71,11 @@ export const Header = () => {
       </div>
 
       <div className="flex items-center gap-2">
-        <button type="button" onClick={handleToggleTheme} className="p-2 rounded-lg hover:bg-bg-surface-hover text-text-muted hover:text-text-bright transition-all bg-transparent border-none cursor-pointer flex items-center justify-center micro-interaction-btn hover:scale-110 active:scale-95" title="Toggle theme">
+        <button aria-label="Toggle theme" type="button" onClick={handleToggleTheme} className="p-2 rounded-lg hover:bg-bg-surface-hover text-text-muted hover:text-text-bright transition-all bg-transparent border-none cursor-pointer flex items-center justify-center micro-interaction-btn hover:scale-110 active:scale-95" title="Toggle theme">
           {cyberTheme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
         {activeSessionDetails && (
-          <button type="button" onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)} className={`p-2 rounded-lg text-text-muted hover:text-text-bright transition-all bg-transparent border-none cursor-pointer flex items-center justify-center micro-interaction-btn ${!rightSidebarCollapsed ? 'bg-accent-primary text-text-bright shadow-primary-glow' : 'hover:bg-bg-surface-hover'}`} title="Toggle properties sidebar">
+          <button aria-label="Toggle properties sidebar" type="button" onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)} className={`p-2 rounded-lg text-text-muted hover:text-text-bright transition-all bg-transparent border-none cursor-pointer flex items-center justify-center micro-interaction-btn ${!rightSidebarCollapsed ? 'bg-accent-primary text-text-bright shadow-primary-glow' : 'hover:bg-bg-surface-hover'}`} title="Toggle properties sidebar">
             <FileCode size={15} />
           </button>
         )}
