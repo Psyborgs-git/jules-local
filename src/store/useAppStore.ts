@@ -34,7 +34,7 @@ interface AppState {
   sessions: Session[];
   setSessions: (sessions: Session[] | ((prev: Session[]) => Session[])) => void;
   activities: Activity[];
-  setActivities: (activities: Activity[]) => void;
+  setActivities: (activities: Activity[] | ((prev: Activity[]) => Activity[])) => void;
   allSources: Source[];
   setAllSources: (sources: Source[]) => void;
   selectedSourceDetails: Source | null;
@@ -94,7 +94,7 @@ export const useAppStore = create<AppState>((set) => ({
   sessions: [],
   setSessions: (sessions) => set((state) => ({ sessions: typeof sessions === 'function' ? sessions(state.sessions) : sessions })),
   activities: [],
-  setActivities: (activities) => set({ activities }),
+  setActivities: (activities) => set((state) => ({ activities: typeof activities === 'function' ? activities(state.activities) : activities })),
   
   allSources: [],
   setAllSources: (sources) => set({ allSources: sources }),

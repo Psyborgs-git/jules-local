@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Code2, CheckSquare, FileCode, Terminal as TerminalIcon, Github } from 'lucide-react';
+import { Code2, Terminal as TerminalIcon, FileCode, CheckSquare } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { julesApi, type Activity } from '../../julesApi';
 import { CollapsibleMessage } from './CollapsibleMessage';
@@ -19,7 +19,7 @@ const ProgressGroup = React.memo(({ activities }: { activities: Activity[] }) =>
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex -space-x-1">
-          {activities.slice(0, 3).map((act, idx) => (
+          {activities.slice(0, 3).map((act) => (
             <CheckSquare key={act.id} size={14} className="text-accent-success bg-bg-app rounded-sm" />
           ))}
         </div>
@@ -237,9 +237,9 @@ export const ChatView = React.memo(() => {
             return prev.map(s => s.id === session.id ? session : s);
           });
           if (newActivities && newActivities.length > 0) {
-            setActivities(prev => {
-              const existingIds = new Set(prev.map(a => a.id));
-              const filteredNew = newActivities.filter(a => !existingIds.has(a.id));
+            setActivities((prev: Activity[]) => {
+              const existingIds = new Set(prev.map((a: Activity) => a.id));
+              const filteredNew = newActivities.filter((a: Activity) => !existingIds.has(a.id));
               if (filteredNew.length === 0) return prev;
               return [...prev, ...filteredNew];
             });

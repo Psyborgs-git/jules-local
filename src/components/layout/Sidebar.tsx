@@ -96,7 +96,7 @@ export const Sidebar = () => {
           <Sparkles className="text-accent-primary" size={18} />
           <span className="font-semibold text-text-main text-base font-mono">Jules Vibe</span>
         </div>
-        <button onClick={() => setSidebarCollapsed(true)} className="p-1.5 rounded-lg hover:bg-bg-surface-hover text-text-muted hover:text-text-bright transition bg-transparent border-none cursor-pointer" title="Collapse sidebar">
+        <button aria-label="Collapse sidebar" onClick={() => setSidebarCollapsed(true)} className="p-1.5 rounded-lg hover:bg-bg-surface-hover text-text-muted hover:text-text-bright transition bg-transparent border-none cursor-pointer" title="Collapse sidebar">
           <ChevronLeft size={16} />
         </button>
       </div>
@@ -139,7 +139,7 @@ export const Sidebar = () => {
                       {getStatusDot(s.state)}
                       <span className="capped-text flex-1 text-xs">{s.title}</span>
                     </div>
-                    <button onClick={(e) => handleDeleteSession(s.id, e)} className="p-1 rounded text-text-muted hover:text-accent-danger bg-transparent border-none cursor-pointer transition opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100">
+                    <button aria-label="Delete session" onClick={(e) => handleDeleteSession(s.id, e)} className="p-1 rounded text-text-muted hover:text-accent-danger bg-transparent border-none cursor-pointer transition opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100">
                       <Trash2 size={10} />
                     </button>
                   </Link>

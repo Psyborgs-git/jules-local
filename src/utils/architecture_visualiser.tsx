@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Server, Database, Brain, Clock, Zap, Cpu, Terminal, Shield, 
   MessageSquare, Settings, Activity, Workflow, GitMerge, Search, Network
@@ -85,11 +85,11 @@ const vloopData = {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('hermes');
-  const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedNode, setSelectedNode] = useState<{ id: string; label: string; icon: React.ElementType; desc: string } | null>(null);
 
   const activeData = activeTab === 'hermes' ? hermesData : vloopData;
 
-  const handleNodeClick = (node) => {
+  const handleNodeClick = (node: { id: string; label: string; icon: React.ElementType; desc: string }) => {
     setSelectedNode(node);
   };
 

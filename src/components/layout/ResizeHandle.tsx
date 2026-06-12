@@ -14,28 +14,6 @@ export const ResizeHandle: React.FC<ResizeHandleProps> = ({ onResize, direction,
     setIsResizing(true);
   }, []);
 
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  const resize = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isResizing) return;
-
-    let clientX: number;
-    if ('touches' in e) {
-      clientX = e.touches[0].clientX;
-    } else {
-      clientX = (e as MouseEvent).clientX;
-    }
-
-    // This logic depends on the parent's fixed positioning or flex layout
-    // For simplicity, we just pass the delta to the callback
-    // But since onResize needs a delta, we need to track previous X
-  }, [isResizing]);
-
-  // Actually, a simpler approach for the callback is to pass the absolute X or the delta
-  // Let's refine the ResizeHandle to be more robust.
-
   useEffect(() => {
     if (!isResizing) return;
 
