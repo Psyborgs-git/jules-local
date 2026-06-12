@@ -16,6 +16,10 @@ app.use(express.json());
 // API Routes
 app.use('/api', apiRouter);
 
+// Setup MCP Server
+import { setupMcpServer } from './server/mcp/index.js';
+setupMcpServer(app);
+
 // Initialize Polling
 runPolling();
 
