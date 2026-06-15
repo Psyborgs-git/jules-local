@@ -1,6 +1,6 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Code2, Terminal as TerminalIcon, FileCode, CheckSquare } from 'lucide-react';
+import { Code2, Terminal as TerminalIcon, FileCode, CheckSquare, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { julesApi, type Activity } from '../../julesApi';
 import { CollapsibleMessage } from './CollapsibleMessage';
@@ -177,29 +177,12 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
                       )}
                       
                       {bashOutput && (
-                        <div 
-                          onClick={() => {
-                            setActiveRightTab('terminal');
-                            setRightSidebarCollapsed(false);
-                          }}
-                          className="flex-1 flex items-center justify-between p-3 bg-bg-surface hover:bg-bg-surface-hover border border-border-subtle hover:border-border-focus rounded-xl transition-all cursor-pointer group/term shadow-sm min-w-0"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className={`p-1.5 rounded-lg flex-shrink-0 ${bashOutput.exitCode === 0 ? 'bg-accent-success/10 text-accent-success' : 'bg-accent-danger/10 text-accent-danger'}`}>
-                              <TerminalIcon size={14} />
-                            </div>
-                            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                              <span className="text-xs font-semibold text-text-bright truncate font-mono block">{logTitle}</span>
-                              <span className="text-[10px] text-text-muted font-mono block">Terminal execution</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase font-mono ${bashOutput.exitCode === 0 ? 'bg-accent-success/10 text-accent-success animate-pulse' : 'bg-accent-danger/10 text-accent-danger'}`}>
-                              {bashOutput.exitCode === 0 ? 'Success' : `Exit ${bashOutput.exitCode}`}
-                            </span>
-                            <span className="text-[10px] font-semibold uppercase text-text-muted group-hover/term:translate-x-0.5 transition-transform ml-1 font-mono whitespace-nowrap">View Log ➔</span>
-                          </div>
-                        </div>
+                        <BashOutputCard
+                           bashOutput={bashOutput}
+                           logTitle={logTitle}
+                           setActiveRightTab={setActiveRightTab}
+                           setRightSidebarCollapsed={setRightSidebarCollapsed}
+                        />
                       )}
                     </div>
                   );
@@ -233,6 +216,59 @@ const PRBanner = ({ prUrl, prTitle, prDesc }: { prUrl: string; prTitle: string; 
         {prTitle}
       </a>
       {prDesc && <div className="text-sm text-text-muted mt-1">{prDesc}</div>}
+    </div>
+  );
+};
+
+
+const BashOutputCard = ({ bashOutput, logTitle, setActiveRightTab, setRightSidebarCollapsed }: { bashOutput: any, logTitle?: string, setActiveRightTab: (tab: 'diffs' | 'terminal') => void, setRightSidebarCollapsed: (collapsed: boolean) => void }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="flex-1 flex flex-col bg-bg-surface border border-border-subtle rounded-xl shadow-sm min-w-0 overflow-hidden">
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between p-3 hover:bg-bg-surface-hover transition-all cursor-pointer group/term"
+      >
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="p-1 rounded-lg text-text-muted">
+            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </div>
+          <div className={`p-1.5 rounded-lg flex-shrink-0 ${bashOutput.exitCode === 0 ? 'bg-accent-success/10 text-accent-success' : 'bg-accent-danger/10 text-accent-danger'}`}>
+            <TerminalIcon size={14} />
+          </div>
+          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+            <span className="text-xs font-semibold text-text-bright truncate font-mono block">{logTitle}</span>
+            <span className="text-[10px] text-text-muted font-mono block">Terminal execution</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase font-mono ${bashOutput.exitCode === 0 ? 'bg-accent-success/10 text-accent-success animate-pulse' : 'bg-accent-danger/10 text-accent-danger'}`}>
+            {bashOutput.exitCode === 0 ? 'Success' : `Exit ${bashOutput.exitCode}`}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveRightTab('terminal');
+              setRightSidebarCollapsed(false);
+            }}
+            className="text-[10px] font-semibold uppercase text-text-muted hover:text-text-main transition-colors ml-1 font-mono whitespace-nowrap bg-transparent border-none cursor-pointer"
+          >
+            Open in sidecar ➔
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="bg-bg-input border-t border-border-subtle p-3 text-[11px] font-mono overflow-x-auto">
+          <div className="text-text-main">
+            <span className="text-accent-primary select-none">❯</span> {bashOutput.command}
+          </div>
+          <div className="text-text-muted mt-2 whitespace-pre-wrap opacity-80">
+            {bashOutput.output || <span className="italic opacity-50">No output</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
