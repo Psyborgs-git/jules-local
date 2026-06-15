@@ -143,6 +143,8 @@ export const saveSession = (session) => {
   });
 };
 
+import { broadcastMcpNotification } from './mcp/index.js';
+
 export const saveActivity = async (activity, sessionId) => {
   // Check if activity exists
   const existing = await new Promise((resolve) => {
@@ -198,7 +200,15 @@ export const saveActivity = async (activity, sessionId) => {
         });
       }
       
-      db.run('SELECT 1', [], () => resolve(true)); // Signal completion
+      db.run('SELECT 1', [], () => {
+        // Trigger MCP notification on activity creation
+        try {
+          broadcastMcpNotification('jules/activity_received', { sessionId, activity });
+        } catch (e) {
+          // Ignore
+        }
+        resolve(true);
+      }); // Signal completion
     });
   });
 };

@@ -94,6 +94,24 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
             />
           )}
 
+          {act.planApproved && (
+            <div className="flex items-center gap-2 text-accent-success font-semibold text-sm">
+              <CheckSquare size={16} /> Plan Approved
+            </div>
+          )}
+
+          {act.sessionCompleted && (
+            <div className="flex items-center gap-2 text-accent-success font-semibold text-sm">
+              <CheckSquare size={16} /> Session Completed successfully!
+            </div>
+          )}
+
+          {act.sessionFailed && (
+            <div className="flex items-center gap-2 text-accent-danger font-semibold text-sm">
+              <span>⚠️ Session Failed: {act.sessionFailed.reason}</span>
+            </div>
+          )}
+
           {act.description && act.description.includes('Created artifact') && (
             <ActivityFiles artifacts={act.artifacts || []} />
           )}
@@ -205,6 +223,20 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
   );
 });
 
+const PRBanner = ({ prUrl, prTitle, prDesc }: { prUrl: string; prTitle: string; prDesc: string }) => {
+  return (
+    <div className="my-6 max-w-[85%] mx-auto bg-accent-primary/10 border border-accent-primary/30 rounded-xl p-4 shadow-lg backdrop-blur-md flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-accent-primary font-bold text-sm">
+        <FileCode size={16} /> Pull Request Created
+      </div>
+      <a href={prUrl} target="_blank" rel="noopener noreferrer" className="text-text-bright font-semibold hover:underline">
+        {prTitle}
+      </a>
+      {prDesc && <div className="text-sm text-text-muted mt-1">{prDesc}</div>}
+    </div>
+  );
+};
+
 export const ChatView = React.memo(() => {
   const { id: sessionId } = useParams<{ id: string }>();
   const { activities, setActivities, sessions, setSessions, dbConfig } = useAppStore();
@@ -302,6 +334,21 @@ export const ChatView = React.memo(() => {
             />
           );
         })}
+
+        {activeSessionDetails?.outputs?.map((output, idx) => {
+          if (output.pullRequest) {
+            return (
+              <PRBanner
+                key={`pr-${idx}`}
+                prUrl={output.pullRequest.url}
+                prTitle={output.pullRequest.title}
+                prDesc={output.pullRequest.description}
+              />
+            );
+          }
+          return null;
+        })}
+
         <div className="h-10" />
       </div>
       <MessageComposer sessionId={sessionId} />
