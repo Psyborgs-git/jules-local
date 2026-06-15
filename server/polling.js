@@ -1,4 +1,4 @@
-import { getSetting, saveSession, saveActivity } from './db.js';
+import { getSetting, saveSession, saveActivity, getSessions } from './db.js';
 import { julesRequest } from './jules.js';
 import { broadcast, getActiveSessionIds } from './sse.js';
 import { broadcastMcpNotification } from './mcp/index.js';
@@ -8,24 +8,37 @@ const pollJules = async () => {
     const apiKey = await getSetting('jules_api_key');
     if (!apiKey) return;
 
-    // 1. Poll sessions list for anyone on the dashboard
+    // Periodically update the list of all sessions in the background
+    // to catch new sessions created outside of this client.
+    // We don't need to do this on every short poll tick.
+    // For simplicity we'll just poll the sessions list occasionally or just do it.
     const sessionsRes = await julesRequest('/sessions');
-    const allSessions = sessionsRes.sessions || [];
-    for (const session of allSessions) {
+    const remoteSessions = sessionsRes.sessions || [];
+    for (const session of remoteSessions) {
       await saveSession(session);
     }
+
+    // 1. Use local db to determine what to poll
+    const allSessions = await getSessions();
+
+    // Broadcast currently known sessions
     broadcast(null, 'sessions', allSessions);
 
-    // 2. Poll active sessions for connected clients
-    // Merge SSE clients and active MCP clients to poll
-    // (Assuming any session that changed should be broadcast to MCP clients as well if they are listening)
-    // We can poll recent sessions to check for activity since we might not know which session the MCP client cares about
-    // Or we poll the most recent sessions up to a limit. Let's poll sessions that changed recently.
-    // For now, let's poll sessions of connected SSE clients, and additionally, poll the top 5 recent sessions
-    // to ensure MCP clients get notified of long running tasks completion.
-
+    // 2. Poll active sessions for connected clients and any sessions that aren't complete
     let sessionIdsToPoll = new Set(getActiveSessionIds());
-    const recentSessions = allSessions.slice(0, 5); // top 5
+
+    // Add active/pending sessions from local db
+    const activeStates = ['QUEUED', 'PLANNING', 'AWAITING_PLAN_APPROVAL', 'AWAITING_USER_FEEDBACK', 'IN_PROGRESS', 'PAUSED'];
+    allSessions.forEach(s => {
+      if (activeStates.includes(s.state)) {
+        sessionIdsToPoll.add(s.id);
+      }
+    });
+
+    // Also add most recent sessions (e.g. top 2) just in case
+    const recentSessions = [...allSessions]
+      .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
+      .slice(0, 2);
     recentSessions.forEach(s => sessionIdsToPoll.add(s.id));
 
     for (const sessionId of sessionIdsToPoll) {
