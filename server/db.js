@@ -6,13 +6,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Initialize SQLite database
 const dbPath = join(__dirname, '../data.db'); // Move up one level if server.js is at root
-export const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Failed to connect to SQLite database:', err.message);
-  } else {
-    console.log('Connected to SQLite database at:', dbPath);
-    
-    db.serialize(() => {
+export const db = new sqlite3.Database(dbPath);
+console.log('Connected to SQLite database at:', dbPath);
+
+db.serialize(() => {
       // Create settings table
       db.run(
         `CREATE TABLE IF NOT EXISTS settings (
@@ -81,8 +78,6 @@ export const db = new sqlite3.Database(dbPath, (err) => {
           FOREIGN KEY(activity_id) REFERENCES activities(id)
         )`
       );
-    });
-  }
 });
 
 // Helper database functions
