@@ -73,7 +73,7 @@ const pollJules = async () => {
       }
     }
   } catch (err) {
-    // Silently handle polling errors to avoid log spam
+    console.error("Polling error:", err);
   }
 };
 
