@@ -7,9 +7,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Initialize SQLite database
 const dbPath = join(__dirname, '../data.db'); // Move up one level if server.js is at root
 export const db = new sqlite3.Database(dbPath);
+db.configure("busyTimeout", 30000);
 console.log('Connected to SQLite database at:', dbPath);
 
 db.serialize(() => {
+      // Enable WAL mode to allow concurrent reads/writes
+      db.run('PRAGMA journal_mode = WAL');
+
       // Create settings table
       db.run(
         `CREATE TABLE IF NOT EXISTS settings (

@@ -8,6 +8,46 @@ import {
 import { julesRequest } from './jules.js';
 import { handleSseConnection } from './sse.js';
 
+function areActivitiesEqual(a, b) {
+  if (!a || !b) return false;
+  if (a.originator !== b.originator) return false;
+  if (a.description !== b.description) return false;
+
+  const keys = [
+    'userMessaged',
+    'agentMessaged',
+    'planGenerated',
+    'planApproved',
+    'sessionCompleted',
+    'sessionFailed',
+    'progressUpdated',
+    'artifacts'
+  ];
+
+  for (const key of keys) {
+    if (JSON.stringify(a[key]) !== JSON.stringify(b[key])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function squashActivities(activities) {
+  const squashed = [];
+  for (const act of activities) {
+    if (squashed.length === 0) {
+      squashed.push(act);
+    } else {
+      const last = squashed[squashed.length - 1];
+      if (!areActivitiesEqual(last, act)) {
+        squashed.push(act);
+      }
+    }
+  }
+  return squashed;
+}
+
 const router = express.Router();
 
 // Config Endpoints
@@ -261,7 +301,7 @@ router.get('/sessions/:id/activities', async (req, res) => {
     const sessionId = req.params.id;
     const cachedActivities = await getActivitiesForSession(sessionId);
     if (cachedActivities.length > 0) {
-      res.json({ activities: cachedActivities });
+      res.json({ activities: squashActivities(cachedActivities) });
       (async () => {
         try {
           const data = await julesRequest(`/sessions/${sessionId}/activities`);
@@ -281,7 +321,7 @@ router.get('/sessions/:id/activities', async (req, res) => {
     }
     
     const canonicalActivities = await getActivitiesForSession(sessionId);
-    res.json({ activities: canonicalActivities });
+    res.json({ activities: squashActivities(canonicalActivities) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

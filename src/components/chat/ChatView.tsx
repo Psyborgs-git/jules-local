@@ -10,11 +10,13 @@ import { MessageComposer } from './MessageComposer';
 
 const ProgressGroup = React.memo(({ activities }: { activities: Activity[] }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const { setActiveRightTab, setRightSidebarCollapsed } = useAppStore();
+
   if (!activities || activities.length === 0) return null;
 
   return (
     <div className="flex flex-col my-4">
-      <div 
+      <div
         className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-bg-surface-hover rounded-lg transition-colors w-fit group"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
@@ -30,17 +32,117 @@ const ProgressGroup = React.memo(({ activities }: { activities: Activity[] }) =>
 
       {!isCollapsed && (
         <div className="flex flex-col gap-1 border-l-2 border-accent-success/30 ml-3 pl-3 py-1 my-1 bg-accent-success/5 rounded-r-lg animate-slide-in">
-          {activities.map(act => (
-            <div key={act.id} className="flex items-start gap-2 py-1">
-              <CheckSquare size={14} className="text-accent-success flex-shrink-0 mt-0.5" />
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-semibold text-accent-success font-mono">{act.progressUpdated?.title}</span>
-                {act.progressUpdated?.description && (
-                  <span className="text-[11px] text-text-muted">{act.progressUpdated.description}</span>
-                )}
+          {activities.map(act => {
+            console.log(act);
+            return (
+              <div key={act.id} className="flex items-start gap-2 py-1 w-full">
+                <CheckSquare size={14} className="text-accent-success flex-shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                  <span className="text-xs font-semibold text-accent-success font-mono">{act.progressUpdated?.title}</span>
+                  {act.progressUpdated?.description && (
+                    <span className="text-[11px] text-text-muted">{act.progressUpdated.description}</span>
+                  )}
+                  {act.artifacts && act.artifacts.length > 0 && (
+                    <div className="mt-2 flex flex-col gap-2 w-full max-w-2xl">
+                      <ActivityFiles artifacts={act.artifacts} />
+                      <div className="flex flex-col gap-2">
+                        {act.artifacts.map((art, aIdx) => {
+                          const patch = art.changeSet?.gitPatch?.unidiffPatch;
+                          const bashOutput = art.bashOutput;
+                          const media = art.media;
+
+                          if (!patch && !bashOutput && !media) return null;
+
+                          const diffTitle = art.changeSet?.gitPatch.suggestedCommitMessage || art.changeSet?.source;
+                          const logTitle = bashOutput?.command;
+
+                          let additions = 0;
+                          let deletions = 0;
+                          if (patch) {
+                            const lines = patch.split('\n');
+                            lines.forEach(l => {
+                              if (l.startsWith('+') && !l.startsWith('+++')) additions++;
+                              else if (l.startsWith('-') && !l.startsWith('---')) deletions++;
+                            });
+                          }
+
+                          return (
+                            <div key={aIdx} className="flex flex-col gap-2 w-full">
+                              {patch && diffTitle && (
+                                <div
+                                  onClick={() => {
+                                    setActiveRightTab('diffs');
+                                    setRightSidebarCollapsed(false);
+                                  }}
+                                  className="flex items-center justify-between p-2.5 bg-accent-primary/5 hover:bg-accent-primary/10 border border-accent-primary/20 hover:border-accent-primary/40 rounded-xl transition-all cursor-pointer group/diff shadow-sm hover:shadow-primary-glow min-w-0"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className="p-1.5 bg-accent-primary/10 rounded-lg text-accent-primary flex-shrink-0">
+                                      <FileCode size={12} />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                                      <span className="text-[11px] font-semibold text-text-bright truncate font-mono block">{diffTitle}</span>
+                                      <span className="text-[9px] text-text-muted font-mono block">Patch modification</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                                    {additions > 0 && (
+                                      <span className="text-[8px] font-mono font-bold px-1 py-0.5 rounded bg-accent-success/10 text-accent-success">+{additions}</span>
+                                    )}
+                                    {deletions > 0 && (
+                                      <span className="text-[8px] font-mono font-bold px-1 py-0.5 rounded bg-accent-danger/10 text-accent-danger">-{deletions}</span>
+                                    )}
+                                    <span className="text-[9px] font-semibold uppercase text-accent-primary group-hover/diff:translate-x-0.5 transition-transform ml-1 font-mono whitespace-nowrap">View Diff ➔</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {bashOutput && logTitle && (
+                                <BashOutputCard
+                                  bashOutput={bashOutput}
+                                  logTitle={logTitle}
+                                  setActiveRightTab={setActiveRightTab}
+                                  setRightSidebarCollapsed={setRightSidebarCollapsed}
+                                />
+                              )}
+
+                              {media && (
+                                <div className="mt-1 rounded-xl overflow-hidden border border-border-subtle shadow-sm bg-bg-surface max-w-md">
+                                  {media.mimeType.startsWith('image/') ? (
+                                    <img
+                                      src={`data:${media.mimeType};base64,${media.data}`}
+                                      alt="Step attachment"
+                                      className="w-full h-auto object-cover max-h-60"
+                                    />
+                                  ) : media.mimeType.startsWith('video/') ? (
+                                    <video
+                                      controls
+                                      src={`data:${media.mimeType};base64,${media.data}`}
+                                      className="w-full h-auto max-h-60"
+                                    />
+                                  ) : media.mimeType.startsWith('audio/') ? (
+                                    <audio
+                                      controls
+                                      src={`data:${media.mimeType};base64,${media.data}`}
+                                      className="w-full p-2"
+                                    />
+                                  ) : (
+                                    <div className="p-2.5 flex items-center gap-2 text-[10px] font-mono text-text-muted">
+                                      <span>Attached media: {media.mimeType}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
@@ -55,8 +157,8 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
     setStatusMsg
   } = useAppStore();
 
-  const isSystem = act.originator === 'system';
-  const isUser = act.originator === 'user';
+  const isSystem = act.originator === 'system' || !!act.planApproved || !!act.sessionCompleted || !!act.sessionFailed;
+  const isUser = act.originator === 'user' && !act.planApproved && !act.sessionCompleted && !act.sessionFailed;
 
   const handleApprovePlan = () => {
     if (!sessionId) return;
@@ -127,7 +229,8 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
                 }).map((art, aIdx) => {
                   const patch = art.changeSet?.gitPatch?.unidiffPatch;
                   const bashOutput = art.bashOutput;
-                  if (!patch && !bashOutput) return null;
+                  const media = art.media;
+                  if (!patch && !bashOutput && !media) return null;
 
                   const diffTitle = art.changeSet?.gitPatch.suggestedCommitMessage || art.changeSet?.source;
                   const logTitle = bashOutput?.command;
@@ -148,7 +251,7 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
                   return (
                     <div key={aIdx} className="flex flex-col sm:flex-row gap-2 items-stretch w-full">
                       {patch && (
-                        <div 
+                        <div
                           onClick={() => {
                             setActiveRightTab('diffs');
                             setRightSidebarCollapsed(false);
@@ -175,14 +278,42 @@ const ChatMessage = React.memo(({ act, isLastAwaitingApproval, sessionId }: { ac
                           </div>
                         </div>
                       )}
-                      
+
                       {bashOutput && (
                         <BashOutputCard
-                           bashOutput={bashOutput}
-                           logTitle={logTitle}
-                           setActiveRightTab={setActiveRightTab}
-                           setRightSidebarCollapsed={setRightSidebarCollapsed}
+                          bashOutput={bashOutput}
+                          logTitle={logTitle}
+                          setActiveRightTab={setActiveRightTab}
+                          setRightSidebarCollapsed={setRightSidebarCollapsed}
                         />
+                      )}
+
+                      {media && (
+                        <div className="flex-1 mt-1 rounded-xl overflow-hidden border border-border-subtle shadow-sm bg-bg-surface max-w-md">
+                          {media.mimeType.startsWith('image/') ? (
+                            <img
+                              src={`data:${media.mimeType};base64,${media.data}`}
+                              alt="Attachment"
+                              className="w-full h-auto object-cover max-h-72"
+                            />
+                          ) : media.mimeType.startsWith('video/') ? (
+                            <video
+                              controls
+                              src={`data:${media.mimeType};base64,${media.data}`}
+                              className="w-full h-auto max-h-72"
+                            />
+                          ) : media.mimeType.startsWith('audio/') ? (
+                            <audio
+                              controls
+                              src={`data:${media.mimeType};base64,${media.data}`}
+                              className="w-full p-2"
+                            />
+                          ) : (
+                            <div className="p-3 flex items-center gap-2 text-xs font-mono text-text-muted">
+                              <span>Attached media: {media.mimeType}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
@@ -356,7 +487,7 @@ export const ChatView = React.memo(() => {
   return (
     <>
       <div className="chat-interface-wrapper" style={{ position: "relative" }}>
-        {groupedActivities.map((item, i) => {
+        {groupedActivities.map((item) => {
           if ('type' in item && item.type === 'progressGroup') {
             return <ProgressGroup key={item.id} activities={item.items} />;
           }
@@ -366,7 +497,7 @@ export const ChatView = React.memo(() => {
               key={act.id}
               act={act}
               sessionId={sessionId}
-              isLastAwaitingApproval={i === activities.length - 1 && activeSessionDetails?.state === 'AWAITING_PLAN_APPROVAL'}
+              isLastAwaitingApproval={activeSessionDetails?.state === 'AWAITING_PLAN_APPROVAL'}
             />
           );
         })}
